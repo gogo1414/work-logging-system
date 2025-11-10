@@ -1,0 +1,192 @@
+"""
+업무 기록 시스템을 위한 Claude API 래퍼 모듈
+"""
+
+import os
+
+from anthropic import Anthropic
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+class ClaudeClientWrapper:
+    """Claude API 호출을 단순화하기 위한 래퍼"""
+
+    def __init__(self):
+        """환경 변수에서 API 키를 읽어 Claude 클라이언트를 초기화"""
+        self.api_key = os.getenv("CLAUDE_API_KEY")
+        if not self.api_key:
+            raise ValueError("CLAUDE_API_KEY not found in environment variables")
+
+        self.client = Anthropic(api_key=self.api_key)
+        self.model = "claude-sonnet-4-20250514"  # Latest Sonnet 4 model
+        self.max_tokens = 2000
+
+    def generate_weekly_summary(
+        self, daily_logs: list[dict], system_prompt: str | None = None
+    ) -> dict[str, str]:
+        """
+        일일 로그 묶음을 기반으로 주간 성과 요약을 생성
+
+        Args:
+            daily_logs: 속성과 본문을 포함한 일일 로그 리스트
+            system_prompt: 커스텀 시스템 프롬프트 (선택, 미지정 시 기본값 사용)
+
+        Returns:
+            bullet_points, key_highlights, raw_response를 포함한 딕셔너리
+        """
+        from .prompts import WEEKLY_SUMMARY_SYSTEM_PROMPT, WEEKLY_SUMMARY_USER_TEMPLATE
+
+        if system_prompt is None:
+            system_prompt = WEEKLY_SUMMARY_SYSTEM_PROMPT
+
+        # Claude 프롬프트에 맞도록 일일 로그 포맷을 정리
+        formatted_logs = self._format_daily_logs(daily_logs)
+
+        user_prompt = WEEKLY_SUMMARY_USER_TEMPLATE.format(combined_logs=formatted_logs)
+
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+
+        content = response.content[0].text
+
+        parts = content.split("## 핵심 하이라이트")
+        bullet_points = parts[0].replace("## 주간 성과 요약", "").strip()
+        key_highlights = parts[1].strip() if len(parts) > 1 else ""
+
+        if not bullet_points:
+            bullet_points = content.strip()
+        if not key_highlights:
+            key_highlights = (
+                "출력에서 핵심 하이라이트 구간을 찾지 못했습니다. 프롬프트를 확인해주세요."
+            )
+
+        return {
+            "bullet_points": bullet_points,
+            "key_highlights": key_highlights,
+            "raw_response": content,
+        }
+
+    def generate_monthly_summary(
+        self, weekly_achievements: list[dict], system_prompt: str | None = None
+    ) -> dict[str, str]:
+        """
+        주간 성과 묶음을 기반으로 월간 하이라이트를 생성
+
+        Args:
+            weekly_achievements: 주간 성과 엔트리 리스트
+            system_prompt: 커스텀 시스템 프롬프트 (선택)
+
+        Returns:
+            summary, career_brief, raw_response를 포함한 딕셔너리
+        """
+        from .prompts import MONTHLY_SUMMARY_SYSTEM_PROMPT, MONTHLY_SUMMARY_USER_TEMPLATE
+
+        if system_prompt is None:
+            system_prompt = MONTHLY_SUMMARY_SYSTEM_PROMPT
+
+        # Claude 프롬프트에 맞도록 주간 성과 포맷을 정리
+        formatted_weeks = self._format_weekly_achievements(weekly_achievements)
+
+        user_prompt = MONTHLY_SUMMARY_USER_TEMPLATE.format(combined_weeks=formatted_weeks)
+
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=self.max_tokens,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+
+        content = response.content[0].text
+
+        parts = content.split("## 경력기술서용 요약")
+        summary = parts[0].replace("## 월간 종합 성과", "").strip()
+        career_brief = parts[1].strip() if len(parts) > 1 else ""
+
+        if not summary:
+            summary = content.strip()
+        if not career_brief:
+            career_brief = (
+                "출력에서 경력기술서용 요약 구간을 찾지 못했습니다. 프롬프트를 확인해주세요."
+            )
+
+        return {"summary": summary, "career_brief": career_brief, "raw_response": content}
+
+    def _format_daily_logs(self, daily_logs: list[dict]) -> str:
+        """일일 로그를 Claude 프롬프트용 문자열로 변환"""
+        formatted_parts = []
+
+        for idx, log in enumerate(daily_logs, 1):
+            props = log.get("properties", {})
+
+            title_prop = props.get("Title", {})
+            title = ""
+            if title_prop.get("title"):
+                title = title_prop["title"][0].get("text", {}).get("content", "")
+
+            category = props.get("Category", {}).get("select", {}).get("name", "")
+
+            impact = props.get("Impact Level", {}).get("select", {}).get("name", "")
+
+            tech_stack = props.get("Tech Stack", {}).get("multi_select", [])
+            tech_names = [tech.get("name", "") for tech in tech_stack]
+
+            metrics_prop = props.get("Metrics", {}).get("rich_text", [])
+            metrics = ""
+            if metrics_prop:
+                metrics = metrics_prop[0].get("text", {}).get("content", "")
+
+            context = log.get("content", "")
+
+            formatted_parts.append(
+                f"""
+### 로그 {idx}: {title}
+- **카테고리**: {category}
+- **영향도**: {impact}
+- **기술 스택**: {', '.join(tech_names)}
+- **정량 지표**: {metrics if metrics else 'N/A'}
+
+**상세 컨텍스트**:
+{context}
+---
+"""
+            )
+
+        return "\n".join(formatted_parts)
+
+    def _format_weekly_achievements(self, weekly_achievements: list[dict]) -> str:
+        """주간 성과 데이터를 Claude 프롬프트용 문자열로 변환"""
+        formatted_parts = []
+
+        for idx, week in enumerate(weekly_achievements, 1):
+            props = week.get("properties", {})
+
+            title_prop = props.get("Title", {})
+            title = ""
+            if title_prop.get("title"):
+                title = title_prop["title"][0].get("text", {}).get("content", "")
+
+            highlights_prop = props.get("Key Highlights", {}).get("rich_text", [])
+            highlights = ""
+            if highlights_prop:
+                highlights = highlights_prop[0].get("text", {}).get("content", "")
+
+            bullet_points = week.get("content", "")
+
+            formatted_parts.append(
+                f"""
+### {title}
+**핵심 하이라이트**: {highlights}
+
+**주간 성과**:
+{bullet_points}
+---
+"""
+            )
+
+        return "\n".join(formatted_parts)
