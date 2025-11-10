@@ -1,0 +1,33 @@
+# Ignore environment variables and secrets
+.env
+.env.*
+
+# Ignore logs
+logs/
+*.log
+
+# Ignore Python cache and build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+dist/
+*.egg-info/
+
+# Ignore virtual environments
+venv/
+env/
+.venv/
+
+# Ignore IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Ignore backup and temporary files
+*.bak
+*.tmp
+*.swp
