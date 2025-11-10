@@ -1,0 +1,6 @@
+docker_image_uri              = "123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/work-logging-system/api:latest"
+notion_db1_id                 = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+notion_db2_id                 = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+notion_db3_id                 = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+ssm_parameter_notion_api_key  = "/work-logging/notion_api_key"
+ssm_parameter_api_auth_token  = "/work-logging/api_auth_token"
