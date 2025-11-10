@@ -1,0 +1,49 @@
+# Pre-commit 훅 설정
+# 설치: pre-commit install
+# 실행: pre-commit run --all-files
+
+repos:
+  # 기본 파일 체크
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        name: 줄 끝 공백 제거
+      - id: end-of-file-fixer
+        name: 파일 끝 줄바꿈 확인
+      - id: check-yaml
+        name: YAML 파일 검증
+        args: ["--unsafe"] # 커스텀 태그 허용
+      - id: check-added-large-files
+        name: 대용량 파일 체크 (500KB 이상)
+        args: ["--maxkb=500"]
+      - id: check-json
+        name: JSON 파일 검증
+      - id: check-merge-conflict
+        name: 머지 충돌 마커 체크
+      - id: check-toml
+        name: TOML 파일 검증
+      - id: mixed-line-ending
+        name: 줄바꿈 일관성 체크
+        args: ["--fix=lf"]
+
+  # Ruff - 린터 및 포맷터 (Black 대체)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        name: Ruff 린팅
+        args: [--fix]
+      - id: ruff-format
+        name: Ruff 포맷팅
+
+  # Mypy - 타입 체킹
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        name: Mypy 타입 체킹
+        additional_dependencies:
+          - types-python-dateutil==2.9.0.20251108
+        args: [--ignore-missing-imports, --scripts-are-modules]
+        exclude: ^(tests/|venv/|\.venv/)

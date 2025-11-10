@@ -1,0 +1,95 @@
+[project]
+name = "work-logging-system"
+version = "0.1.0"
+description = "업무 자동 로깅 및 이력서 관리 시스템"
+requires-python = ">=3.10"
+readme = "README.md"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+# 제외할 파일/디렉터리
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "__pycache__",
+]
+
+[tool.ruff.lint]
+# 활성화할 규칙
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+
+# 무시할 규칙
+ignore = [
+    "E501",  # line too long (ruff format이 처리)
+    "B008",  # do not perform function calls in argument defaults
+    "W191",  # indentation contains tabs
+    "B007",  # loop control variable not used (enumerate 사용 시)
+    "SIM108", # use ternary operator (가독성 우선)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # unused imports in __init__.py
+
+[tool.ruff.lint.isort]
+known-first-party = ["scripts", "tests"]
+
+[tool.mypy]
+python_version = "3.13"
+# 점진적 타입 힌트 적용 (엄격 모드 완화)
+warn_return_any = false
+warn_unused_configs = true
+disallow_untyped_defs = false
+no_implicit_optional = true
+check_untyped_defs = true
+ignore_missing_imports = true
+
+# 제외 디렉터리
+exclude = [
+    "venv",
+    ".venv",
+    "build",
+    "dist",
+]
+
+# 외부 라이브러리 ignore
+[[tool.mypy.overrides]]
+module = [
+    "notion_client.*",
+    "anthropic.*",
+    "fastapi.*",
+    "uvicorn.*",
+    "schedule.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "integration: 통합 테스트",
+    "unit: 단위 테스트",
+]
+

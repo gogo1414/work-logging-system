@@ -1,0 +1,40 @@
+# ============================================
+# 프로덕션 의존성 (Production Dependencies)
+# ============================================
+
+# Notion API
+notion-client==2.2.1
+
+# Claude API
+anthropic==0.39.0
+
+# Environment variables
+python-dotenv==1.0.0
+
+# Scheduling (for future use)
+schedule==1.2.0
+
+# Utilities
+python-dateutil==2.8.2
+
+# REST API
+fastapi==0.115.2
+uvicorn[standard]==0.30.6
+
+# ============================================
+# 개발 도구 (Development Tools)
+# ============================================
+
+# 린터 및 코드 포맷팅 (Ruff로 통합)
+ruff==0.8.4
+
+# 타입 체킹
+mypy==1.13.0
+types-python-dateutil==2.9.0.20251108
+
+# Pre-commit 훅
+pre-commit==4.0.1
+
+# 테스트 도구
+pytest==8.3.3
+pytest-cov==6.0.0
