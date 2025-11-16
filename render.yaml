@@ -1,0 +1,37 @@
+services:
+  # FastAPI 웹 서비스
+  - type: web
+    name: work-logging-api
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # Notion API 설정
+      - key: NOTION_API_KEY
+        sync: false
+      - key: NOTION_DB1_ID
+        sync: false
+      - key: NOTION_DB2_ID
+        sync: false
+      - key: NOTION_DB3_ID
+        sync: false
+
+      # API 인증
+      - key: API_AUTH_TOKEN
+        sync: false
+
+      # LLM 제공자 선택 (claude, openai, gemini 중 하나)
+      - key: LLM_PROVIDER
+        value: claude
+
+      # LLM API 키 (사용하는 제공자에 맞게 설정)
+      - key: CLAUDE_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
