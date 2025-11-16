@@ -31,6 +31,107 @@ class NotionClientWrapper:
         if not self.daily_logs_db:
             raise ValueError("NOTION_DB1_ID not found in environment variables")
 
+    def _parse_markdown_to_blocks(self, markdown_text: str) -> list[dict[str, Any]]:
+        """
+        마크다운 텍스트를 Notion 블록으로 변환
+
+        Args:
+            markdown_text: 마크다운 형식의 텍스트
+
+        Returns:
+            Notion 블록 리스트
+        """
+        blocks = []
+        lines = markdown_text.split("\n")
+        i = 0
+
+        while i < len(lines):
+            line = lines[i]
+
+            # 빈 줄은 건너뛰기
+            if not line.strip():
+                i += 1
+                continue
+
+            # Heading 3 (###)
+            if line.startswith("### "):
+                blocks.append(
+                    {
+                        "object": "block",
+                        "type": "heading_3",
+                        "heading_3": {
+                            "rich_text": [
+                                {"type": "text", "text": {"content": line.replace("### ", "")}}
+                            ]
+                        },
+                    }
+                )
+            # Heading 2 (##)
+            elif line.startswith("## "):
+                blocks.append(
+                    {
+                        "object": "block",
+                        "type": "heading_2",
+                        "heading_2": {
+                            "rich_text": [
+                                {"type": "text", "text": {"content": line.replace("## ", "")}}
+                            ]
+                        },
+                    }
+                )
+            # Bulleted list (-)
+            elif line.strip().startswith("- "):
+                blocks.append(
+                    {
+                        "object": "block",
+                        "type": "bulleted_list_item",
+                        "bulleted_list_item": {
+                            "rich_text": [
+                                {"type": "text", "text": {"content": line.strip()[2:]}}
+                            ]
+                        },
+                    }
+                )
+            # Numbered list (1., 2., etc.)
+            elif line.strip() and line.strip()[0].isdigit() and ". " in line.strip()[:4]:
+                content = line.strip().split(". ", 1)[1] if ". " in line.strip() else line.strip()
+                blocks.append(
+                    {
+                        "object": "block",
+                        "type": "numbered_list_item",
+                        "numbered_list_item": {
+                            "rich_text": [{"type": "text", "text": {"content": content}}]
+                        },
+                    }
+                )
+            # 일반 텍스트 (paragraph)
+            else:
+                # 여러 줄을 하나의 paragraph로 묶기
+                paragraph_lines = [line]
+                i += 1
+                while i < len(lines) and lines[i].strip() and not lines[i].startswith(
+                    ("#", "-", "1.", "2.", "3.", "4.")
+                ):
+                    paragraph_lines.append(lines[i])
+                    i += 1
+                i -= 1  # 다음 반복에서 올바른 라인부터 시작하도록 조정
+
+                content = "\n".join(paragraph_lines)
+                if content.strip():
+                    blocks.append(
+                        {
+                            "object": "block",
+                            "type": "paragraph",
+                            "paragraph": {
+                                "rich_text": [{"type": "text", "text": {"content": content}}]
+                            },
+                        }
+                    )
+
+            i += 1
+
+        return blocks
+
     def create_daily_log(
         self,
         title: str,
@@ -73,23 +174,22 @@ class NotionClientWrapper:
         if ticket_url:
             properties["Ticket URL"] = {"url": ticket_url}
 
+        # Context를 마크다운에서 Notion 블록으로 변환
+        context_blocks = [
+            {
+                "object": "block",
+                "type": "heading_2",
+                "heading_2": {
+                    "rich_text": [{"type": "text", "text": {"content": "📝 상세 컨텍스트"}}]
+                },
+            }
+        ]
+        context_blocks.extend(self._parse_markdown_to_blocks(context))
+
         page = self.client.pages.create(
             parent={"database_id": self.daily_logs_db},
             properties=properties,
-            children=[
-                {
-                    "object": "block",
-                    "type": "heading_2",
-                    "heading_2": {
-                        "rich_text": [{"type": "text", "text": {"content": "📝 상세 컨텍스트"}}]
-                    },
-                },
-                {
-                    "object": "block",
-                    "type": "paragraph",
-                    "paragraph": {"rich_text": [{"type": "text", "text": {"content": context}}]},
-                },
-            ],
+            children=context_blocks,
         )
 
         return page
