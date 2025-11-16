@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from scripts.utils.claude_client import ClaudeClientWrapper
+from scripts.utils.llm_client import BaseLLMClient, LLMClientFactory
 from scripts.utils.notion_client import NotionClientWrapper
 
 
@@ -99,10 +99,10 @@ class WeeklyProcessor:
     def __init__(
         self,
         notion_client: NotionClientWrapper | None = None,
-        claude_client: ClaudeClientWrapper | None = None,
+        llm_client: BaseLLMClient | None = None,
     ):
         self.notion = notion_client or NotionClientWrapper()
-        self.claude = claude_client or ClaudeClientWrapper()
+        self.llm = llm_client or LLMClientFactory.create_client()
 
     def fetch_daily_logs(
         self, start_date: datetime, end_date: datetime, status_filter: str | None = None
@@ -123,7 +123,7 @@ class WeeklyProcessor:
 
     def summarize_logs(self, logs: list[dict]) -> dict:
         """
-        Claude API를 사용해 일일 로그 묶음을 주간 성과로 요약
+        LLM API를 사용해 일일 로그 묶음을 주간 성과로 요약
 
         Args:
             logs: 일일 로그 리스트
@@ -131,7 +131,7 @@ class WeeklyProcessor:
         Returns:
             bullet_points, key_highlights, raw_response를 포함한 dict
         """
-        summary = self.claude.generate_weekly_summary(logs)
+        summary = self.llm.generate_weekly_summary(logs)
         return summary
 
     def save_weekly_summary(

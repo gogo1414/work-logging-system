@@ -11,7 +11,7 @@ from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from scripts.utils.claude_client import ClaudeClientWrapper
+from scripts.utils.llm_client import BaseLLMClient, LLMClientFactory
 from scripts.utils.notion_client import NotionClientWrapper
 
 
@@ -100,18 +100,18 @@ class MonthlyProcessor:
     def __init__(
         self,
         notion_client: NotionClientWrapper | None = None,
-        claude_client: ClaudeClientWrapper | None = None,
+        llm_client: BaseLLMClient | None = None,
     ):
         self.notion = notion_client or NotionClientWrapper()
-        self.claude = claude_client or ClaudeClientWrapper()
+        self.llm = llm_client or LLMClientFactory.create_client()
 
     def fetch_weekly_achievements(self, start_date: datetime, end_date: datetime) -> list[dict]:
         """월간 기간에 해당하는 주간 성과를 조회"""
         return self.notion.get_weekly_achievements_with_content(start_date, end_date)
 
     def summarize_weeks(self, weekly_data: list[dict]) -> dict:
-        """Claude API로 월간 요약을 생성"""
-        return self.claude.generate_monthly_summary(weekly_data)
+        """LLM API로 월간 요약을 생성"""
+        return self.llm.generate_monthly_summary(weekly_data)
 
     def build_stats_text(
         self, weekly_data: list[dict], start_date: datetime, end_date: datetime

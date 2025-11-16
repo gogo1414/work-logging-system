@@ -7,10 +7,12 @@ import os
 from anthropic import Anthropic
 from dotenv import load_dotenv
 
+from .llm_client import BaseLLMClient
+
 load_dotenv()
 
 
-class ClaudeClientWrapper:
+class ClaudeClientWrapper(BaseLLMClient):
     """Claude API 호출을 단순화하기 위한 래퍼"""
 
     def __init__(self):
@@ -117,76 +119,3 @@ class ClaudeClientWrapper:
 
         return {"summary": summary, "career_brief": career_brief, "raw_response": content}
 
-    def _format_daily_logs(self, daily_logs: list[dict]) -> str:
-        """일일 로그를 Claude 프롬프트용 문자열로 변환"""
-        formatted_parts = []
-
-        for idx, log in enumerate(daily_logs, 1):
-            props = log.get("properties", {})
-
-            title_prop = props.get("Title", {})
-            title = ""
-            if title_prop.get("title"):
-                title = title_prop["title"][0].get("text", {}).get("content", "")
-
-            category = props.get("Category", {}).get("select", {}).get("name", "")
-
-            impact = props.get("Impact Level", {}).get("select", {}).get("name", "")
-
-            tech_stack = props.get("Tech Stack", {}).get("multi_select", [])
-            tech_names = [tech.get("name", "") for tech in tech_stack]
-
-            metrics_prop = props.get("Metrics", {}).get("rich_text", [])
-            metrics = ""
-            if metrics_prop:
-                metrics = metrics_prop[0].get("text", {}).get("content", "")
-
-            context = log.get("content", "")
-
-            formatted_parts.append(
-                f"""
-### 로그 {idx}: {title}
-- **카테고리**: {category}
-- **영향도**: {impact}
-- **기술 스택**: {', '.join(tech_names)}
-- **정량 지표**: {metrics if metrics else 'N/A'}
-
-**상세 컨텍스트**:
-{context}
----
-"""
-            )
-
-        return "\n".join(formatted_parts)
-
-    def _format_weekly_achievements(self, weekly_achievements: list[dict]) -> str:
-        """주간 성과 데이터를 Claude 프롬프트용 문자열로 변환"""
-        formatted_parts = []
-
-        for idx, week in enumerate(weekly_achievements, 1):
-            props = week.get("properties", {})
-
-            title_prop = props.get("Title", {})
-            title = ""
-            if title_prop.get("title"):
-                title = title_prop["title"][0].get("text", {}).get("content", "")
-
-            highlights_prop = props.get("Key Highlights", {}).get("rich_text", [])
-            highlights = ""
-            if highlights_prop:
-                highlights = highlights_prop[0].get("text", {}).get("content", "")
-
-            bullet_points = week.get("content", "")
-
-            formatted_parts.append(
-                f"""
-### {title}
-**핵심 하이라이트**: {highlights}
-
-**주간 성과**:
-{bullet_points}
----
-"""
-            )
-
-        return "\n".join(formatted_parts)
