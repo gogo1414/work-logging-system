@@ -15,16 +15,18 @@
 - [스크립트 실행](#스크립트-실행-가이드)
 - [Docker 실행](#docker-실행)
 - [REST API 명세](#rest-api-명세)
+- [LLM 제공자 선택](#llm-제공자-선택)
 - [테스트](#테스트)
 - [AWS 배포](#aws-배포)
+- [Render 배포 (가장 간편한 방법)](#render-배포-가장-간편한-방법)
 - [운영 및 모니터링](#운영-및-모니터링)
 
 ## 프로젝트 개요
 
 - 일간: Cursor/Claude 등 외부 도구가 REST API(`/daily-logs`)를 호출하거나, 사용자가 터미널에서 `/daily-organize` 플로우를 실행해 Notion `Daily Work Logs` DB에 기록
-- 주간: 스케줄러가 지난 1주 데이터를 취합해 Claude로 핵심 성과를 뽑고 `Weekly Achievements` DB에 저장
+- 주간: 스케줄러가 지난 1주 데이터를 취합해 LLM(Claude/ChatGPT/Gemini)으로 핵심 성과를 뽑고 `Weekly Achievements` DB에 저장
 - 월간: 주간 데이터 묶음을 활용해 월간 주요 성과를 정리하고 `Monthly Highlights` DB에 저장
-- 모든 자동화 파이프라인은 Python 스크립트/REST API로 구성되며, 배포는 Docker 컨테이너 + Terraform(AWS) 기반으로 자동화
+- 모든 자동화 파이프라인은 Python 스크립트/REST API로 구성되며, 배포는 Docker 컨테이너 + Render/AWS 기반으로 자동화
 
 ## 아키텍처
 
@@ -52,10 +54,10 @@ flowchart LR
     A[EventBridge Scheduler] -->|주간 트리거| B[weekly_processor.py]
     A -->|월간 트리거| C[monthly_processor.py]
     B --> D[Notion DB1<br/>Daily Logs]
-    D --> E[Claude API<br/>STAR 요약]
+    D --> E[LLM API<br/>STAR 요약]
     E --> F[Notion DB2<br/>Weekly Achievements]
     C --> F
-    F --> G[Claude API<br/>월간 하이라이트]
+    F --> G[LLM API<br/>월간 하이라이트]
     G --> H[Notion DB3<br/>Monthly Highlights]
 ```
 
@@ -77,7 +79,7 @@ graph TB
     end
 
     Lambda --> Notion[Notion API]
-    Lambda --> Claude[Claude API]
+    Lambda --> LLM[LLM API<br/>Claude/ChatGPT/Gemini]
     ECR -.->|이미지| Lambda
 ```
 
@@ -87,8 +89,8 @@ graph TB
 
 1. Python 3.10 이상
 2. Notion 워크스페이스 접근 권한
-3. Anthropic Claude API 키
-4. Terraform CLI 1.5 이상
+3. LLM API 키 (Claude, OpenAI ChatGPT, 또는 Google Gemini 중 선택)
+4. Terraform CLI 1.5 이상 (AWS 배포 시)
 5. Docker 24.x 이상 (FastAPI 서버 빌드/테스트용)
 
 ## 가상환경(venv) 생성 및 의존성 설치
@@ -221,8 +223,9 @@ Pre-commit이 설치되면 `git commit` 시 자동으로 검사가 실행되며,
    - `NOTION_DB2_ID`
    - `NOTION_DB3_ID`
    - `API_AUTH_TOKEN` (REST API 호출 시 사용할 Bearer 토큰)
-3. Claude API 사용을 위한 `CLAUDE_API_KEY` 등 추가 키는 이후 `.env`에 확장
-4. `.env`는 Git에 커밋하지 않도록 주의
+   - `LLM_PROVIDER` (claude, openai, gemini 중 선택)
+   - 선택한 LLM의 API 키 (`CLAUDE_API_KEY`, `OPENAI_API_KEY`, 또는 `GEMINI_API_KEY`)
+3. `.env`는 Git에 커밋하지 않도록 주의
 
 ## 스크립트 실행 가이드
 
@@ -392,6 +395,60 @@ curl -X POST https://your-api-endpoint.com/daily-logs \
 
 > **협업 팁:** 외부 팀원에게 이 가이드를 공유하면, Notion DB 구조나 내부 필드명을 모르더라도 템플릿을 채워서 요청을 보낼 수 있습니다. Cursor/Claude 등 LLM 도구에 이 템플릿을 제공하면 자동으로 STAR 구조에 맞춰 정리해 줄 수 있습니다.
 
+## LLM 제공자 선택
+
+이 프로젝트는 여러 LLM 제공자를 지원합니다. 환경 변수 `LLM_PROVIDER`로 사용할 LLM을 선택할 수 있습니다.
+
+### 지원하는 LLM 제공자
+
+| 제공자              | 모델                     | 환경 변수        | API 키 발급                   |
+| ------------------- | ------------------------ | ---------------- | ----------------------------- |
+| **Claude** (기본값) | claude-sonnet-4-20250514 | `CLAUDE_API_KEY` | https://console.anthropic.com |
+| **OpenAI ChatGPT**  | gpt-4o                   | `OPENAI_API_KEY` | https://platform.openai.com   |
+| **Google Gemini**   | gemini-2.0-flash-exp     | `GEMINI_API_KEY` | https://aistudio.google.com   |
+
+### 설정 방법
+
+1. `.env` 파일에 원하는 LLM 제공자와 API 키를 설정합니다:
+
+```bash
+# LLM 제공자 선택 (claude | openai | gemini)
+LLM_PROVIDER=claude
+
+# 선택한 제공자의 API 키 설정
+CLAUDE_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# 또는
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# 또는
+GEMINI_API_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+2. 스크립트 실행 시 자동으로 선택한 LLM이 사용됩니다:
+
+```bash
+# 주간 요약 생성 (설정된 LLM 사용)
+python scripts/weekly_processor.py --dry-run
+
+# 월간 요약 생성 (설정된 LLM 사용)
+python scripts/monthly_processor.py --dry-run
+```
+
+### LLM 제공자 비교
+
+| 항목               | Claude     | OpenAI ChatGPT | Google Gemini |
+| ------------------ | ---------- | -------------- | ------------- |
+| **한국어 품질**    | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐       | ⭐⭐⭐⭐      |
+| **컨텍스트 이해**  | 매우 우수  | 우수           | 우수          |
+| **무료 티어**      | 제한적     | 제한적         | 관대함        |
+| **응답 속도**      | 빠름       | 빠름           | 매우 빠름     |
+| **가격 (1M 토큰)** | $3 (입력)  | $2.5 (입력)    | 무료 (제한적) |
+
+**권장 사항:**
+
+- 품질 우선: Claude (기본값)
+- 비용 최적화: Gemini
+- 범용성: OpenAI ChatGPT
+
 ## 테스트
 
 ### 로컬 테스트 실행
@@ -501,6 +558,114 @@ terraform apply -var-file=terraform.tfvars
 
 자세한 내용은 [`deploy/terraform.md`](deploy/terraform.md)를 참고하세요.
 
+## Render 배포 (가장 간편한 방법)
+
+Render는 GitHub 저장소만 연결하면 자동으로 빌드·배포·운영해주는 PaaS 플랫폼입니다. AWS보다 훨씬 간단하게 서비스를 배포할 수 있습니다.
+
+### 장점
+
+- **극도로 간편함**: GitHub 리포지토리 연결만으로 자동 배포
+- **무료 플랜**: 월 750시간 무료 (24/7 운영 가능)
+- **자동 HTTPS**: SSL 인증서 자동 발급 및 갱신
+- **Git 푸시 자동 배포**: main 브랜치에 푸시하면 자동으로 재배포
+
+### 단점
+
+- **Sleep 모드**: 15분 미사용 시 자동으로 sleep (첫 요청 시 20-30초 지연)
+- **제한된 리소스**: 무료 플랜은 512MB RAM, 0.1 CPU
+
+### 배포 단계
+
+#### 1. Render 계정 생성 및 GitHub 연결
+
+1. https://render.com 접속 후 GitHub으로 로그인
+2. 대시보드에서 `New +` → `Blueprint` 선택
+3. 이 저장소를 연결
+
+#### 2. 환경 변수 설정
+
+Render 대시보드에서 서비스 선택 → `Environment` 탭에서 다음 변수를 추가:
+
+```bash
+# 필수 환경 변수
+NOTION_API_KEY=secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NOTION_DB1_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NOTION_DB2_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NOTION_DB3_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+API_AUTH_TOKEN=your_secure_token
+
+# LLM 설정 (선택한 제공자만 설정)
+LLM_PROVIDER=claude
+CLAUDE_API_KEY=sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+#### 3. 배포 확인
+
+1. Render가 자동으로 Docker 이미지를 빌드하고 배포합니다
+2. 배포 완료 후 할당된 URL 확인 (예: `https://work-logging-api.onrender.com`)
+3. Health check: `https://your-app.onrender.com/health`
+
+#### 4. Sleep 모드 방지 (선택사항)
+
+무료 플랜의 Sleep 모드를 방지하려면 GitHub Actions로 주기적으로 health check를 보내세요.
+
+1. GitHub 저장소 → `Settings` → `Secrets and variables` → `Actions`
+2. New repository secret 추가:
+
+   - Name: `RENDER_SERVICE_URL`
+   - Value: `https://your-app.onrender.com` (Render에서 할당받은 URL)
+
+3. `.github/workflows/keepalive.yml`이 자동으로 10분마다 `/health`를 호출합니다
+
+**주의:** GitHub Actions도 무료 플랜에서 월 2,000분 제한이 있습니다. 10분마다 실행 시 월 약 4,320분 사용 예상이므로, 필요에 따라 cron 주기를 조정하세요 (예: `*/14 * * * *`로 변경).
+
+#### 5. 대안: 외부 Cron 서비스
+
+GitHub Actions 대신 무료 외부 서비스를 사용할 수도 있습니다:
+
+- **Cron-job.org**: https://cron-job.org
+- **UptimeRobot**: https://uptimerobot.com (5분마다 무료)
+- **BetterUptime**: https://betteruptime.com
+
+설정 방법:
+
+1. 서비스 가입 후 새 모니터 생성
+2. URL: `https://your-app.onrender.com/health`
+3. 체크 주기: 10-14분
+
+### Render vs AWS 비교
+
+| 항목            | Render (무료)      | AWS Lambda            |
+| --------------- | ------------------ | --------------------- |
+| **설정 복잡도** | 매우 쉬움          | 중간 (Terraform 필요) |
+| **배포 시간**   | 5분                | 30분+                 |
+| **Cold Start**  | 20-30초 (sleep 시) | 1-3초                 |
+| **비용**        | $0 (750시간/월)    | $0 (100만 요청/월)    |
+| **확장성**      | 제한적             | 무제한                |
+| **적합한 사용** | 개인 프로젝트, MVP | 프로덕션, 대규모      |
+
+**권장 사항:**
+
+- 개인 프로젝트, 빠른 프로토타입: Render
+- 프로덕션, 고트래픽: AWS Lambda
+
+### Render 배포 문제 해결
+
+**Q: 빌드가 실패합니다**
+
+- Dockerfile이 올바른지 확인
+- 로컬에서 `docker build -t test .`로 테스트
+
+**Q: 서비스가 시작되지 않습니다**
+
+- 환경 변수가 모두 설정되었는지 확인
+- Render 로그에서 에러 메시지 확인
+
+**Q: API 호출이 401 오류를 반환합니다**
+
+- `API_AUTH_TOKEN`이 올바르게 설정되었는지 확인
+- `Authorization: Bearer <token>` 헤더가 정확한지 확인
+
 ## 운영 및 모니터링
 
 ### 로그 관리
@@ -518,9 +683,13 @@ terraform apply -var-file=terraform.tfvars
 
 ### 비용 추적
 
-- **Claude API**: Anthropic 콘솔에서 월별 토큰 사용량 확인
+- **LLM API**: 선택한 제공자의 콘솔에서 사용량 확인
+  - Claude: https://console.anthropic.com/settings/usage
+  - OpenAI: https://platform.openai.com/usage
+  - Gemini: https://aistudio.google.com/app/apikey
 - **AWS**: Cost Explorer로 Lambda, API Gateway, Parameter Store 비용 모니터링
-- **예상 비용**: AWS 프리티어 내에서 대부분 무료 (Lambda 100만 요청/월, API Gateway 100만 요청/월)
+- **Render**: 대시보드에서 무료 플랜 사용량 확인
+- **예상 비용**: 무료 플랜으로 대부분 커버 가능
 
 ### 장애 대응
 
