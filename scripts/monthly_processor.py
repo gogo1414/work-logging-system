@@ -37,7 +37,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="주간 성과를 집계해 Notion Monthly Highlights DB에 저장합니다."
     )
-    parser.add_argument("--year", type=int, help="집계 연도 (예: 2025). 미지정 시 현재 연도.")
+    parser.add_argument(
+        "--year", type=int, help="집계 연도 (예: 2025). 미지정 시 현재 연도."
+    )
     parser.add_argument("--month", type=int, help="집계 월 (1-12). 미지정 시 현재 월.")
     parser.add_argument(
         "--start-date",
@@ -105,7 +107,9 @@ class MonthlyProcessor:
         self.notion = notion_client or NotionClientWrapper()
         self.llm = llm_client or LLMClientFactory.create_client()
 
-    def fetch_weekly_achievements(self, start_date: datetime, end_date: datetime) -> list[dict]:
+    def fetch_weekly_achievements(
+        self, start_date: datetime, end_date: datetime
+    ) -> list[dict]:
         """월간 기간에 해당하는 주간 성과를 조회"""
         return self.notion.get_weekly_achievements_with_content(start_date, end_date)
 
@@ -121,7 +125,9 @@ class MonthlyProcessor:
         total_daily_logs = 0
 
         for week in weekly_data:
-            relation = week.get("properties", {}).get("Source Logs", {}).get("relation", [])
+            relation = (
+                week.get("properties", {}).get("Source Logs", {}).get("relation", [])
+            )
             total_daily_logs += len(relation)
 
         lines = [
@@ -132,7 +138,12 @@ class MonthlyProcessor:
         return "\n".join(lines)
 
     def save_monthly_summary(
-        self, year: int, month: int, summary: dict, weekly_data: list[dict], stats_text: str
+        self,
+        year: int,
+        month: int,
+        summary: dict,
+        weekly_data: list[dict],
+        stats_text: str,
     ) -> dict:
         """월간 요약을 Notion 월간 DB에 저장"""
         source_week_ids = [week["id"] for week in weekly_data if "id" in week]
@@ -147,10 +158,17 @@ class MonthlyProcessor:
         return page
 
     def run(
-        self, start_date: datetime, end_date: datetime, year: int, month: int, dry_run: bool = False
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        year: int,
+        month: int,
+        dry_run: bool = False,
     ) -> dict | None:
         """월간 요약 전체 흐름 실행"""
-        write_execution_log("INFO", f"월간 처리 시작: {start_date.date()} ~ {end_date.date()}")
+        write_execution_log(
+            "INFO", f"월간 처리 시작: {start_date.date()} ~ {end_date.date()}"
+        )
 
         weekly_data = self.fetch_weekly_achievements(start_date, end_date)
         if not weekly_data:
@@ -161,7 +179,9 @@ class MonthlyProcessor:
         stats_text = self.build_stats_text(weekly_data, start_date, end_date)
 
         if dry_run:
-            write_execution_log("INFO", "Dry-run 모드로 실행됨. Notion 저장을 건너뜁니다.")
+            write_execution_log(
+                "INFO", "Dry-run 모드로 실행됨. Notion 저장을 건너뜁니다."
+            )
             print("## 월간 종합 성과")
             print(summary.get("summary", ""))
             print("\n## 경력기술서용 요약")
@@ -191,7 +211,11 @@ def main():
     try:
         processor = MonthlyProcessor()
         processor.run(
-            start_date=start_date, end_date=end_date, year=year, month=month, dry_run=args.dry_run
+            start_date=start_date,
+            end_date=end_date,
+            year=year,
+            month=month,
+            dry_run=args.dry_run,
         )
     except KeyboardInterrupt:
         write_execution_log("CANCELLED", "사용자가 Ctrl+C로 종료함")

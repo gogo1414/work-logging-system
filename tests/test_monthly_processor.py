@@ -22,7 +22,11 @@ class MonthlyProcessorTestCase(unittest.TestCase):
         self.mock_notion.get_weekly_achievements_with_content.return_value = []
 
         result = self.processor.run(
-            start_date=self.start_date, end_date=self.end_date, year=2025, month=11, dry_run=False
+            start_date=self.start_date,
+            end_date=self.end_date,
+            year=2025,
+            month=11,
+            dry_run=False,
         )
 
         self.assertIsNone(result)
@@ -34,7 +38,9 @@ class MonthlyProcessorTestCase(unittest.TestCase):
         weekly_data = [
             {
                 "id": "week-001",
-                "properties": {"Source Logs": {"relation": [{"id": "page-1"}, {"id": "page-2"}]}},
+                "properties": {
+                    "Source Logs": {"relation": [{"id": "page-1"}, {"id": "page-2"}]}
+                },
                 "content": "주간 요약 본문",
             }
         ]
@@ -48,7 +54,11 @@ class MonthlyProcessorTestCase(unittest.TestCase):
         self.mock_claude.generate_monthly_summary.return_value = summary_result
 
         result = self.processor.run(
-            start_date=self.start_date, end_date=self.end_date, year=2025, month=11, dry_run=True
+            start_date=self.start_date,
+            end_date=self.end_date,
+            year=2025,
+            month=11,
+            dry_run=True,
         )
 
         self.assertEqual(result, summary_result)
@@ -59,7 +69,9 @@ class MonthlyProcessorTestCase(unittest.TestCase):
         weekly_data = [
             {
                 "id": "week-001",
-                "properties": {"Source Logs": {"relation": [{"id": "page-1"}, {"id": "page-2"}]}},
+                "properties": {
+                    "Source Logs": {"relation": [{"id": "page-1"}, {"id": "page-2"}]}
+                },
                 "content": "주간 요약 본문",
             },
             {
@@ -79,7 +91,11 @@ class MonthlyProcessorTestCase(unittest.TestCase):
         self.mock_notion.create_monthly_highlight.return_value = {"id": "monthly-001"}
 
         result = self.processor.run(
-            start_date=self.start_date, end_date=self.end_date, year=2025, month=11, dry_run=False
+            start_date=self.start_date,
+            end_date=self.end_date,
+            year=2025,
+            month=11,
+            dry_run=False,
         )
 
         self.assertEqual(result, {"id": "monthly-001"})

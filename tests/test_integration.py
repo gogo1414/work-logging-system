@@ -52,7 +52,9 @@ class _StubNotionClient:
                 "Category": {"select": {"name": category}},
                 "Impact Level": {"select": {"name": impact_level}},
                 "Tech Stack": {"multi_select": [{"name": tech} for tech in tech_stack]},
-                "Metrics": {"rich_text": ([{"text": {"content": metrics}}] if metrics else [])},
+                "Metrics": {
+                    "rich_text": ([{"text": {"content": metrics}}] if metrics else [])
+                },
             },
             "content": context,
         }
@@ -86,9 +88,15 @@ class _StubNotionClient:
             "period_start": period_start.date(),
             "period_end": period_end.date(),
             "properties": {
-                "Title": {"title": [{"text": {"content": f"{period_start:%Y년 %m월 %W주차}"}}]},
-                "Key Highlights": {"rich_text": [{"text": {"content": key_highlights}}]},
-                "Source Logs": {"relation": [{"id": log_id} for log_id in source_log_ids]},
+                "Title": {
+                    "title": [{"text": {"content": f"{period_start:%Y년 %m월 %W주차}"}}]
+                },
+                "Key Highlights": {
+                    "rich_text": [{"text": {"content": key_highlights}}]
+                },
+                "Source Logs": {
+                    "relation": [{"id": log_id} for log_id in source_log_ids]
+                },
             },
             "content": bullet_points,
         }
@@ -122,7 +130,9 @@ class _StubNotionClient:
             "properties": {
                 "Title": {"title": [{"text": {"content": f"{year}년 {month:02d}월"}}]},
                 "Stats": {"rich_text": [{"text": {"content": stats_text}}]},
-                "Source Weeks": {"relation": [{"id": week_id} for week_id in source_week_ids]},
+                "Source Weeks": {
+                    "relation": [{"id": week_id} for week_id in source_week_ids]
+                },
             },
             "content": {"summary": summary, "career_brief": career_brief},
         }

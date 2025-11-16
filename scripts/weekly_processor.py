@@ -43,7 +43,10 @@ def parse_args() -> argparse.Namespace:
         help="집계 시작일 (YYYY-MM-DD). 미지정 시 종료일 기준 6일 전.",
     )
     parser.add_argument(
-        "--end-date", dest="end_date", type=str, help="집계 종료일 (YYYY-MM-DD). 기본값은 오늘."
+        "--end-date",
+        dest="end_date",
+        type=str,
+        help="집계 종료일 (YYYY-MM-DD). 기본값은 오늘.",
     )
     parser.add_argument(
         "--status",
@@ -61,7 +64,9 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def resolve_period(start_str: str | None, end_str: str | None) -> tuple[datetime, datetime]:
+def resolve_period(
+    start_str: str | None, end_str: str | None
+) -> tuple[datetime, datetime]:
     """
     시작일과 종료일 문자열을 datetime으로 변환하고 기본값을 적용
 
@@ -118,7 +123,9 @@ class WeeklyProcessor:
         Returns:
             일일 로그 리스트
         """
-        logs = self.notion.get_daily_logs_with_content(start_date, end_date, status_filter)
+        logs = self.notion.get_daily_logs_with_content(
+            start_date, end_date, status_filter
+        )
         return logs
 
     def summarize_logs(self, logs: list[dict]) -> dict:
@@ -135,7 +142,11 @@ class WeeklyProcessor:
         return summary
 
     def save_weekly_summary(
-        self, start_date: datetime, end_date: datetime, summary: dict, source_logs: list[dict]
+        self,
+        start_date: datetime,
+        end_date: datetime,
+        summary: dict,
+        source_logs: list[dict],
     ) -> dict:
         """
         요약 결과를 Notion 주간 DB에 저장
@@ -178,7 +189,9 @@ class WeeklyProcessor:
         Returns:
             저장된 페이지 객체 또는 None
         """
-        write_execution_log("INFO", f"주간 처리 시작: {start_date.date()} ~ {end_date.date()}")
+        write_execution_log(
+            "INFO", f"주간 처리 시작: {start_date.date()} ~ {end_date.date()}"
+        )
         logs = self.fetch_daily_logs(start_date, end_date, status_filter)
 
         if not logs:
@@ -188,7 +201,9 @@ class WeeklyProcessor:
         summary = self.summarize_logs(logs)
 
         if dry_run:
-            write_execution_log("INFO", "Dry-run 모드로 실행됨. Notion 저장을 건너뜁니다.")
+            write_execution_log(
+                "INFO", "Dry-run 모드로 실행됨. Notion 저장을 건너뜁니다."
+            )
             print("## 주간 성과 요약")
             print(summary.get("bullet_points", ""))
             print("\n## 핵심 하이라이트")

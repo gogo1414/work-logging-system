@@ -66,9 +66,7 @@ class OpenAIClient(BaseLLMClient):
         if not bullet_points:
             bullet_points = content.strip()
         if not key_highlights:
-            key_highlights = (
-                "출력에서 핵심 하이라이트 구간을 찾지 못했습니다. 프롬프트를 확인해주세요."
-            )
+            key_highlights = "출력에서 핵심 하이라이트 구간을 찾지 못했습니다. 프롬프트를 확인해주세요."
 
         return {
             "bullet_points": bullet_points,
@@ -89,7 +87,10 @@ class OpenAIClient(BaseLLMClient):
         Returns:
             summary, career_brief, raw_response를 포함한 딕셔너리
         """
-        from .prompts import MONTHLY_SUMMARY_SYSTEM_PROMPT, MONTHLY_SUMMARY_USER_TEMPLATE
+        from .prompts import (
+            MONTHLY_SUMMARY_SYSTEM_PROMPT,
+            MONTHLY_SUMMARY_USER_TEMPLATE,
+        )
 
         if system_prompt is None:
             system_prompt = MONTHLY_SUMMARY_SYSTEM_PROMPT
@@ -97,7 +98,9 @@ class OpenAIClient(BaseLLMClient):
         # 프롬프트에 맞도록 주간 성과 포맷을 정리
         formatted_weeks = self._format_weekly_achievements(weekly_achievements)
 
-        user_prompt = MONTHLY_SUMMARY_USER_TEMPLATE.format(combined_weeks=formatted_weeks)
+        user_prompt = MONTHLY_SUMMARY_USER_TEMPLATE.format(
+            combined_weeks=formatted_weeks
+        )
 
         response = self.client.chat.completions.create(
             model=self.model,
@@ -117,8 +120,10 @@ class OpenAIClient(BaseLLMClient):
         if not summary:
             summary = content.strip()
         if not career_brief:
-            career_brief = (
-                "출력에서 경력기술서용 요약 구간을 찾지 못했습니다. 프롬프트를 확인해주세요."
-            )
+            career_brief = "출력에서 경력기술서용 요약 구간을 찾지 못했습니다. 프롬프트를 확인해주세요."
 
-        return {"summary": summary, "career_brief": career_brief, "raw_response": content}
+        return {
+            "summary": summary,
+            "career_brief": career_brief,
+            "raw_response": content,
+        }

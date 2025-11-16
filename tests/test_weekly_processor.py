@@ -22,7 +22,10 @@ class WeeklyProcessorTestCase(unittest.TestCase):
         self.mock_notion.get_daily_logs_with_content.return_value = []
 
         result = self.processor.run(
-            start_date=self.start_date, end_date=self.end_date, status_filter=None, dry_run=False
+            start_date=self.start_date,
+            end_date=self.end_date,
+            status_filter=None,
+            dry_run=False,
         )
 
         self.assertIsNone(result)
@@ -42,7 +45,10 @@ class WeeklyProcessorTestCase(unittest.TestCase):
         self.mock_claude.generate_weekly_summary.return_value = summary_result
 
         result = self.processor.run(
-            start_date=self.start_date, end_date=self.end_date, status_filter=None, dry_run=True
+            start_date=self.start_date,
+            end_date=self.end_date,
+            status_filter=None,
+            dry_run=True,
         )
 
         self.assertEqual(result, summary_result)

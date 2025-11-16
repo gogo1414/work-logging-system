@@ -26,8 +26,12 @@ class DailyLogRequest(BaseModel):
     category: str = Field(..., description="업무 카테고리 (성능개선, 신규기능 등)")
     impact_level: str = Field(..., description="영향도 (High/Medium/Low)")
     tech_stack: list[str] = Field(..., description="사용 기술 스택 목록")
-    logged_date: str | None = Field(None, description="기록 일자 (YYYY-MM-DD), 미지정 시 오늘 날짜")
-    status: str | None = Field(default="Logged", description="초기 상태 (기본값 Logged)")
+    logged_date: str | None = Field(
+        None, description="기록 일자 (YYYY-MM-DD), 미지정 시 오늘 날짜"
+    )
+    status: str | None = Field(
+        default="Logged", description="초기 상태 (기본값 Logged)"
+    )
     metrics: str | None = Field(None, description="정량 지표 (예: 응답시간 50% 단축)")
     ticket_url: str | None = Field(None, description="관련 이슈 URL (Jira, GitHub 등)")
 

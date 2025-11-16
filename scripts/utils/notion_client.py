@@ -61,7 +61,10 @@ class NotionClientWrapper:
                         "type": "heading_3",
                         "heading_3": {
                             "rich_text": [
-                                {"type": "text", "text": {"content": line.replace("### ", "")}}
+                                {
+                                    "type": "text",
+                                    "text": {"content": line.replace("### ", "")},
+                                }
                             ]
                         },
                     }
@@ -74,7 +77,10 @@ class NotionClientWrapper:
                         "type": "heading_2",
                         "heading_2": {
                             "rich_text": [
-                                {"type": "text", "text": {"content": line.replace("## ", "")}}
+                                {
+                                    "type": "text",
+                                    "text": {"content": line.replace("## ", "")},
+                                }
                             ]
                         },
                     }
@@ -93,14 +99,22 @@ class NotionClientWrapper:
                     }
                 )
             # Numbered list (1., 2., etc.)
-            elif line.strip() and line.strip()[0].isdigit() and ". " in line.strip()[:4]:
-                content = line.strip().split(". ", 1)[1] if ". " in line.strip() else line.strip()
+            elif (
+                line.strip() and line.strip()[0].isdigit() and ". " in line.strip()[:4]
+            ):
+                content = (
+                    line.strip().split(". ", 1)[1]
+                    if ". " in line.strip()
+                    else line.strip()
+                )
                 blocks.append(
                     {
                         "object": "block",
                         "type": "numbered_list_item",
                         "numbered_list_item": {
-                            "rich_text": [{"type": "text", "text": {"content": content}}]
+                            "rich_text": [
+                                {"type": "text", "text": {"content": content}}
+                            ]
                         },
                     }
                 )
@@ -109,8 +123,10 @@ class NotionClientWrapper:
                 # 여러 줄을 하나의 paragraph로 묶기
                 paragraph_lines = [line]
                 i += 1
-                while i < len(lines) and lines[i].strip() and not lines[i].startswith(
-                    ("#", "-", "1.", "2.", "3.", "4.")
+                while (
+                    i < len(lines)
+                    and lines[i].strip()
+                    and not lines[i].startswith(("#", "-", "1.", "2.", "3.", "4."))
                 ):
                     paragraph_lines.append(lines[i])
                     i += 1
@@ -123,7 +139,9 @@ class NotionClientWrapper:
                             "object": "block",
                             "type": "paragraph",
                             "paragraph": {
-                                "rich_text": [{"type": "text", "text": {"content": content}}]
+                                "rich_text": [
+                                    {"type": "text", "text": {"content": content}}
+                                ]
                             },
                         }
                     )
@@ -161,7 +179,9 @@ class NotionClientWrapper:
         """
         properties = {
             "Name": {"title": [{"text": {"content": title}}]},
-            "Logged Date": {"date": {"start": (logged_date or datetime.now()).isoformat()}},
+            "Logged Date": {
+                "date": {"start": (logged_date or datetime.now()).isoformat()}
+            },
             "Category": {"select": {"name": category}},
             "Impact Level": {"select": {"name": impact_level}},
             "Tech Stack": {"multi_select": [{"name": tech} for tech in tech_stack]},
@@ -180,7 +200,9 @@ class NotionClientWrapper:
                 "object": "block",
                 "type": "heading_2",
                 "heading_2": {
-                    "rich_text": [{"type": "text", "text": {"content": "📝 상세 컨텍스트"}}]
+                    "rich_text": [
+                        {"type": "text", "text": {"content": "📝 상세 컨텍스트"}}
+                    ]
                 },
             }
         ]
@@ -236,8 +258,14 @@ class NotionClientWrapper:
         """
         filter_conditions = {
             "and": [
-                {"property": "Logged Date", "date": {"on_or_after": start_date.isoformat()}},
-                {"property": "Logged Date", "date": {"on_or_before": end_date.isoformat()}},
+                {
+                    "property": "Logged Date",
+                    "date": {"on_or_after": start_date.isoformat()},
+                },
+                {
+                    "property": "Logged Date",
+                    "date": {"on_or_before": end_date.isoformat()},
+                },
             ]
         }
 
@@ -334,14 +362,18 @@ class NotionClientWrapper:
                     "object": "block",
                     "type": "heading_2",
                     "heading_2": {
-                        "rich_text": [{"type": "text", "text": {"content": "🎯 주간 성과 요약"}}]
+                        "rich_text": [
+                            {"type": "text", "text": {"content": "🎯 주간 성과 요약"}}
+                        ]
                     },
                 },
                 {
                     "object": "block",
                     "type": "paragraph",
                     "paragraph": {
-                        "rich_text": [{"type": "text", "text": {"content": bullet_points}}]
+                        "rich_text": [
+                            {"type": "text", "text": {"content": bullet_points}}
+                        ]
                     },
                 },
             ],
@@ -367,8 +399,14 @@ class NotionClientWrapper:
 
         filter_conditions = {
             "and": [
-                {"property": "Period Start", "date": {"on_or_after": start_date.isoformat()}},
-                {"property": "Period End", "date": {"on_or_before": end_date.isoformat()}},
+                {
+                    "property": "Period Start",
+                    "date": {"on_or_after": start_date.isoformat()},
+                },
+                {
+                    "property": "Period End",
+                    "date": {"on_or_before": end_date.isoformat()},
+                },
             ]
         }
 
@@ -421,7 +459,9 @@ class NotionClientWrapper:
             "Title": {"title": [{"text": {"content": title}}]},
             "Year-Month": {"date": {"start": year_month_date.isoformat()}},
             "Generated At": {"date": {"start": datetime.now().isoformat()}},
-            "Source Weeks": {"relation": [{"id": week_id} for week_id in source_week_ids]},
+            "Source Weeks": {
+                "relation": [{"id": week_id} for week_id in source_week_ids]
+            },
             "Stats": {"rich_text": [{"text": {"content": stats_text}}]},
         }
 
@@ -433,26 +473,37 @@ class NotionClientWrapper:
                     "object": "block",
                     "type": "heading_2",
                     "heading_2": {
-                        "rich_text": [{"type": "text", "text": {"content": "📈 월간 종합 성과"}}]
-                    },
-                },
-                {
-                    "object": "block",
-                    "type": "paragraph",
-                    "paragraph": {"rich_text": [{"type": "text", "text": {"content": summary}}]},
-                },
-                {
-                    "object": "block",
-                    "type": "heading_2",
-                    "heading_2": {
-                        "rich_text": [{"type": "text", "text": {"content": "🧾 경력기술서용 요약"}}]
+                        "rich_text": [
+                            {"type": "text", "text": {"content": "📈 월간 종합 성과"}}
+                        ]
                     },
                 },
                 {
                     "object": "block",
                     "type": "paragraph",
                     "paragraph": {
-                        "rich_text": [{"type": "text", "text": {"content": career_brief}}]
+                        "rich_text": [{"type": "text", "text": {"content": summary}}]
+                    },
+                },
+                {
+                    "object": "block",
+                    "type": "heading_2",
+                    "heading_2": {
+                        "rich_text": [
+                            {
+                                "type": "text",
+                                "text": {"content": "🧾 경력기술서용 요약"},
+                            }
+                        ]
+                    },
+                },
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text": [
+                            {"type": "text", "text": {"content": career_brief}}
+                        ]
                     },
                 },
             ],

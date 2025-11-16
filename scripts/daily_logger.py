@@ -103,7 +103,9 @@ def get_date_input(prompt: str, default: datetime | None = None) -> datetime:
         try:
             return datetime.strptime(value, "%Y-%m-%d")
         except ValueError:
-            print_error("날짜 형식이 올바르지 않습니다. YYYY-MM-DD 형식으로 입력해주세요.")
+            print_error(
+                "날짜 형식이 올바르지 않습니다. YYYY-MM-DD 형식으로 입력해주세요."
+            )
 
 
 def get_multiline_input(prompt: str) -> str:
@@ -117,7 +119,9 @@ def get_multiline_input(prompt: str) -> str:
         줄바꿈을 포함한 문자열
     """
     print(f"{Colors.OKBLUE}{prompt}")
-    print(f"(여러 줄 입력 가능. 입력 완료 후 빈 줄에서 Enter를 두 번 누르세요){Colors.ENDC}\n")
+    print(
+        f"(여러 줄 입력 가능. 입력 완료 후 빈 줄에서 Enter를 두 번 누르세요){Colors.ENDC}\n"
+    )
 
     lines = []
     empty_line_count = 0
@@ -137,7 +141,9 @@ def get_multiline_input(prompt: str) -> str:
     return "\n".join(lines).strip()
 
 
-def get_select_input(prompt: str, options: list[str], default: str | None = None) -> str:
+def get_select_input(
+    prompt: str, options: list[str], default: str | None = None
+) -> str:
     """
     미리 정의된 선택지 중 하나를 고르는 함수
 
@@ -280,7 +286,9 @@ def main():
     print_info("자주 사용하는 기술 스택:")
     tech_stack_selections = get_multi_select_input("🛠️ 기술 스택", common_tech_stack)
 
-    custom_tech = get_input("🛠️ 추가 기술 스택 (쉼표로 구분, 없으면 Enter)", required=False)
+    custom_tech = get_input(
+        "🛠️ 추가 기술 스택 (쉼표로 구분, 없으면 Enter)", required=False
+    )
     if custom_tech:
         tech_stack = tech_stack_selections + [t.strip() for t in custom_tech.split(",")]
     else:
@@ -289,7 +297,9 @@ def main():
     print()
     context = get_multiline_input("📝 상세 컨텍스트 (문제, 해결 과정, 결과)")
 
-    metrics = get_input("📊 정량적 지표 (예: 응답시간 50% 단축, DAU 10% 증가)", required=False)
+    metrics = get_input(
+        "📊 정량적 지표 (예: 응답시간 50% 단축, DAU 10% 증가)", required=False
+    )
 
     ticket_url = get_input("🔗 관련 이슈 URL (Jira, GitHub 등)", required=False)
 
