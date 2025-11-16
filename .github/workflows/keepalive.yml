@@ -1,0 +1,37 @@
+name: Keep Render Service Alive
+
+on:
+  schedule:
+    # 10분마다 실행 (Render 무료 플랜은 15분 미사용 시 sleep)
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  keepalive:
+    name: Ping Health Endpoint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health Check Request
+        run: |
+          # Render 서비스 URL을 GitHub Secrets에 설정하거나 여기에 직접 입력
+          RENDER_URL="${{ secrets.RENDER_SERVICE_URL }}"
+
+          if [ -z "$RENDER_URL" ]; then
+            echo "⚠️  RENDER_SERVICE_URL이 설정되지 않았습니다."
+            echo "GitHub Secrets에 RENDER_SERVICE_URL을 추가하세요."
+            echo "예: https://your-app.onrender.com"
+            exit 0
+          fi
+
+          echo "🔄 Pinging $RENDER_URL/health..."
+
+          response=$(curl -s -o /dev/null -w "%{http_code}" "$RENDER_URL/health" || echo "000")
+
+          if [ "$response" = "200" ]; then
+            echo "✅ 서비스 정상 응답 (HTTP $response)"
+          else
+            echo "⚠️  서비스 응답 없음 또는 오류 (HTTP $response)"
+            echo "첫 요청이거나 서비스가 깨어나는 중일 수 있습니다."
+          fi
+
+          echo "마지막 핑 시간: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
